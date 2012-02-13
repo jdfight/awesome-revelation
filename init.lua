@@ -40,6 +40,12 @@ config = {
         exact = aw_rules.match,
         any   = aw_rules.match_any
     },
+    exclude = {
+       rules = {
+	  { class = "Gnome-panel" },
+
+       }
+    } 
 }
 
 -- Executed when user selects a client from expose view.
@@ -62,17 +68,26 @@ end
 -- @param t The tag to give matching clients.
 function match_clients(rule, clients, t)
     local mf = rule.any and config.match.any or config.match.exact
-    for _, c in pairs(clients) do
-        if mf(c, rule) then
-            -- Store geometry before setting their tags
-            if awful.client.floating.get(c) then
-                clientData[c] = c:geometry()
-                awful.client.floating.set(c, false)
-            end
+    local ef = config.match.exact
+    local skip = false
+     for _, c in pairs(clients) do
+	for field, value in pairs(config.exclude.rules) do
+	   if ef(c, value) then 
+	      skip = true
+	   end
+	end
 
-            awful.client.toggletag(t, c)
-            c.minimized = false
-        end
+	if not skip and mf(c, rule) then
+	   -- Store geometry before setting their tags
+	   if awful.client.floating.get(c) then
+              clientData[c] = c:geometry()
+              awful.client.floating.set(c, false)
+	    end
+
+	     awful.client.toggletag(t, c)
+	     c.minimized = false
+	  end
+       skip = false
     end
     return clients
 end
